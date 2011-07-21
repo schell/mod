@@ -43,7 +43,7 @@ var require = function (src, callback) {
 	// a list of paths to loaded sources, ordered last loaded to first loaded
 	require.completedLoads = require.completedLoads || [];
 	// a list of paths to not-loaded sources, newest to oldest
-	require.uncompleteLoads = require.uncompleteLoads || [];
+	require.incompleteLoads = require.incompleteLoads || [];
 	// a reference to the DOM's head tag
 	require.head = require.head || document.getElementsByTagName('head')[0];
 	// all the packages (groups of dependencies) we've loaded/begun loading
@@ -127,13 +127,13 @@ var require = function (src, callback) {
 			var dependency = package.dependencies[i];
 			if (require.completedLoads.indexOf(dependency) === -1) {
 				// if the dependency has not been loaded
-				var indexOf = require.uncompleteLoads.indexOf(dependency);
+				var indexOf = require.incompleteLoads.indexOf(dependency);
 				if (indexOf !== -1) {
 					// if this unloaded dependency already exists we'll cut it out
-					require.uncompleteLoads.splice(indexOf, 1);
+					require.incompleteLoads.splice(indexOf, 1);
 				}
 				// move it to the top, because we need it...now
-				require.uncompleteLoads.unshift(dependency);
+				require.incompleteLoads.unshift(dependency);
 			}
 		}
 	};
@@ -193,13 +193,13 @@ var require = function (src, callback) {
 		/**
 		 *	Loads the next dependency needed by our packages.
 		 */
-		if (require.uncompleteLoads.length) {
+		if (require.incompleteLoads.length) {
 			require.loading = true;
-			var dependency = require.uncompleteLoads[0];
+			var dependency = require.incompleteLoads[0];
 			loadScript(dependency, function onLoadedRequiredScript(src) {
 				// move the dependency to the loaded list
 				require.completedLoads.unshift(dependency);
-				require.uncompleteLoads.splice(require.uncompleteLoads.indexOf(dependency), 1);
+				require.incompleteLoads.splice(require.incompleteLoads.indexOf(dependency), 1);
 				removeDependencyFromPackages(dependency);
 				loadNextDependency();
 			});
