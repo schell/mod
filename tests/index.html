@@ -1,0 +1,46 @@
+<html>
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<title>require tests</title>
+		<!-- Just load require -->
+		<script src="../require.js" type="text/javascript" charset="utf-8"></script>
+	</head>
+	<body id="index" onload="onload">
+		<script type="text/javascript" charset="utf-8">
+			var onload = function () {
+				// I suggest creating modules that list their dependencies and then
+				// init() in the require callback...
+				var testModule = {
+					dependencies : [
+						'test.js'
+					],
+					init : function initTestModule() {
+						// then return the final form of the module
+						return {
+							note : 'All done. Check your console for test output.'
+						};
+					}
+				};
+				// then load the dependencies and call init() in the callback
+				require(testModule.dependencies, function testModuleDependenciesLoaded() {
+					// before this callback is called test.js is loaded and eval'd - which
+					// makes more calls to require, which loads more scripts, which make more
+					// calls to require, etc. 
+					// The callbacks for all these require()'s will get called in FILO, (first in last out),
+					// so the most deeply nested require()'s callback will fire first. This callback will
+					// fire last. This way things will be all set up for this callback by the time it runs...
+					
+					globalTests.requireTests(function allTestsAreDone() {
+						// assert is defined in test.js
+						assert.eq(require.completedLoads.length, 4, 'total number of loaded sources is 4');
+						// re-assign the module to it's final form
+						testModule = testModule.init();
+						alert(testModule.note);
+						// print test results to console...
+						assert.stat();
+					});
+				});
+			}
+		</script>
+	</body>
+</html>
