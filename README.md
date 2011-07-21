@@ -4,7 +4,7 @@ A function for loading external js sources. It serves the same purpose as other 
 
 Use
 ---
-You should only ever have to have one script tag in your document head. Just include require.js:
+You should only ever have to write one script tag in your document head. Just include require.js:
 
 ```html
 <script src="require.js" type="text/javascript" charset="utf-8"></script>
@@ -54,3 +54,5 @@ and then set up your module (or not, but I like using modules) to use require(sr
 ```html
 </script>
 ```
+
+See tests/index.html and associated files for more info.
