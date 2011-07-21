@@ -151,7 +151,7 @@ var require = function (src, callback) {
 		};
 		require.head.appendChild(script);
 		if (require.nocache) {
-			src += '?'+Math.random()*1000000;
+			src += '?nocache='+Math.random()*1000000;
 		}
 		script.src = src;
 	};
