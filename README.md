@@ -55,4 +55,8 @@ and then set up your module (or not, but I like using modules) to use require(sr
 </script>
 ```
 
+Notes
+-----
+In development situations the scripts `require` loads can change often. In order to avoid the browser cacheing these files (and returning an old version of your scripts) set `require.nocache = true`, which will enable the "force re-download" feature. Unfortunately with `require.nocache` set to true, many javascript debuggers can't set breakpoints on the loaded scripts. Keep this in mind.
+
 See tests/index.html and associated files for more info.
