@@ -49,7 +49,7 @@ var require = function (src, callback) {
 	// all the packages (groups of dependencies) we've loaded/begun loading
 	require.packages = require.packages || [];
 	// whether or not to force the browser not to cache sources
-	require.nocache = false;
+	require.nocache = require.nocache || false;
 	
 	var args = Array.prototype.slice.call(arguments, 0);
 	

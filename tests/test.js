@@ -18,13 +18,12 @@ var assert = function () {
     return {
         eq : function (uno, dos, label) {
 			label = label || '';
-            console.log(label+' asserting '+uno+' == '+dos);
+            console.log(label+'\n	asserting '+uno+' == '+dos);
             if (uno !== dos) {
                 var failString = uno+' !== '+dos;
                 console.log('ERROR '+failString);
                 failStrings.push(failString);
                 fails++;
-				throw new Error('assertion incorrect!');
                 return false;
             }
             passes++;
