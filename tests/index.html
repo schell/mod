@@ -7,8 +7,15 @@
 	</head>
 	<body id="index" onload="onload">
 		<script type="text/javascript" charset="utf-8">
-			var onload = function () {
+			var initRequire = function () {
+				if (require.reset) {
+					require.reset();
+				}
 				require.nocache = true;
+				require.useTagInjection = true;
+			};	
+			initRequire();
+			var onload = function () {
 				// I suggest creating modules that list their dependencies and then
 				// init() in the require callback...
 				var testModule = {
@@ -31,16 +38,21 @@
 					// so the most deeply nested require()'s callback will fire first. This callback will
 					// fire last. This way things will be all set up for this callback by the time it runs...
 					
-					globalTests.requireTests(function allTestsAreDone() {
+					globalTests.requireTests(function loadTestsAreDone() {
 						// assert is defined in test.js
 						assert.eq(require.completedLoads.length, 4, 'total number of loaded sources is 4');
 						assert.eq(require.nocache, true, 'can set require.nocache');
-						// re-assign the module to it's final form
-						testModule = testModule.init();
-						alert(testModule.note);
-						// print test results to console...
-						assert.stat();
+						
+						initRequire();
+						globalTests.moduleTests(function moduleTestsAreDown() {
+							// re-assign the module to it's final form
+							testModule = testModule.init();
+							document.write(testModule.note);
+							// print test results to console...
+							assert.stat();
+						});
 					});
+					
 				});
 			}
 		</script>

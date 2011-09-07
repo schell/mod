@@ -55,8 +55,24 @@ var globalTests = (function () {
 			callback();
 		});
 	};
+	var moduleTests = function (callback) {
+		console.log('running module tests...');
+		require('moduleTestOne.js', function moduleTestsCallback() {
+			assert.eq(sequence, '321m3m2m1', 'sequence of callbacks is correct');
+			// compile tests
+			var output = require.compile();
+			for (var i = 0; i < require.packages.length; i++) {
+				assert.eq(require.packages[i].callbackOrder, i, 'Module/package callback order is correct ('+i+')');
+			}
+			sequence = '';
+			window.eval(output);
+			assert.eq(sequence, 'm3m2m1', 'Can compile modules');
+			callback();
+		});
+	};
 	
 	return {
-		requireTests : requireTests
+		requireTests : requireTests,
+		moduleTests : moduleTests
 	};
 })();
