@@ -20,7 +20,7 @@ var assert = function () {
 			label = label || '';
             console.log(label+'\n	asserting '+uno+' == '+dos);
             if (uno !== dos) {
-                var failString = uno+' !== '+dos;
+                var failString = uno+' !== '+dos+' ('+label+')';
                 console.log('ERROR '+failString);
                 failStrings.push(failString);
                 fails++;
@@ -37,7 +37,7 @@ var assert = function () {
                 console.log('FAIL...');
                 var n = failStrings.length;
                 for (var i = 0; i < n; i++) {
-                    console.log(n + ' ' + failStrings[i]);
+                    console.log(i + ' ' + failStrings[i]);
                 }
             }
             console.log('passes:'+passes+' fails:'+fails);
@@ -51,22 +51,19 @@ var globalTests = (function () {
 	var requireTests = function (callback) {
 		console.log('running require tests...');
 		require('requireTestOne.js', function requireTestsCallback() {
-			assert.eq(sequence, '321', 'sequence of callbacks is 3,2,1');
+			assert.eq(sequence, '321', true, 'sequence of callbacks is 3,2,1');
 			callback();
 		});
 	};
 	var moduleTests = function (callback) {
 		console.log('running module tests...');
 		require('moduleTestOne.js', function moduleTestsCallback() {
-			assert.eq(sequence, '321m3m2m1', 'sequence of callbacks is correct');
+			assert.eq(sequence, '321firstm3m2m1', 'sequence of callbacks is correct');
 			// compile tests
 			var output = require.compile();
-			for (var i = 0; i < require.packages.length; i++) {
-				assert.eq(require.packages[i].callbackOrder, i, 'Module/package callback order is correct ('+i+')');
-			}
 			sequence = '';
 			window.eval(output);
-			assert.eq(sequence, 'm3m2m1', 'Can compile modules');
+			assert.eq(sequence, 'firstm3m2m1', 'Can compile modules');
 			callback();
 		});
 	};

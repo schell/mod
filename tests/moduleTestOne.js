@@ -1,6 +1,9 @@
 require({
 	name : 'moduleTestOne',
-	dependencies : ['moduleTestTwo.js'],
+	dependencies : [
+		'moduleTestTwo.js',
+		'initFirst.js'
+	],
 	init : function initModuleOne() {
 		return {
 			id : 'moduleOne'

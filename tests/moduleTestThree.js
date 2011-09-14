@@ -1,6 +1,8 @@
 require({
 	name : 'moduleTestThree',
-	dependencies : ['moduleTestOne.js'], // circular
+	dependencies : [
+		'initFirst.js'
+	], // circular dependencies, but should get init'd before this
 	init : function initModuleThree() {
 		return {
 			id : 'moduleThree'

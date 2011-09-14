@@ -47,6 +47,11 @@ var require = function (src, callback) {
 	require.completedLoads = require.completedLoads || [];
 	// a list of paths to not-loaded sources, newest to oldest
 	require.incompleteLoads = require.incompleteLoads || [];
+	// a list of paths specifying which script needs to be initialized first
+	require.initOrder = require.initOrder || [];
+	// a reference to the path of the last package loaded (we don't know the package
+	// name until loading is complete, at which point we don't know the package path)
+	require.lastPathLoaded = require.lastPathLoaded || 'main';
 	// a reference to the DOM's head tag
 	require.head = require.head || document.getElementsByTagName('head')[0];
 	// all the packages (groups of dependencies) we've loaded/begun loading
@@ -70,11 +75,6 @@ var require = function (src, callback) {
 	//--------------------------------------
 	//  MODULES
 	//--------------------------------------
-	var isModule = function (module) {
-		return ('name' 			in module &&
-				'dependencies' 	in module &&
-				'init' 			in module);
-	};
 	// this is the module format
 	/*
 	{
@@ -84,18 +84,28 @@ var require = function (src, callback) {
 		callback 		: aFunctionToRunAfterTheModuleHasBeenCreated
 	};
 	*/
-	require.compile = function () {
-		/**
-		 *	Compiles the loaded modules into one script for optimization
-		 */
+	var isModule = function (module) {
+		return ('name' 			in module &&
+				'dependencies' 	in module &&
+				'init' 			in module);
+	};
+	require.sortPackages = function () {
 		var sortOnLoadOrder = function (pa, pb) {
 			if (isModule(pa) && isModule(pb)) {
-				return pa.callbackOrder < pb.callbackOrder ? -1 : 1;
+				var pacb = require.initOrder.indexOf(pa.path);
+				var pbcb = require.initOrder.indexOf(pb.path);
+				return pacb < pbcb ? -1 : 1;
 			} else {
 				return 0;
 			}
 		};
 		require.packages.sort(sortOnLoadOrder);
+	};
+	require.compile = function () {
+		/**
+		 *	Compiles the loaded modules into one script for optimization
+		 */
+		require.sortPackages();
 		var output = '';
 		output += ('/// require.js compilation '+Date.now().toString());
 		for (var i = 0; i < require.packages.length; i++) {
@@ -116,7 +126,7 @@ var require = function (src, callback) {
 	//--------------------------------------
 	var args = Array.prototype.slice.call(arguments, 0);
 	
-	var packageDependencies = function (fromArguments) {
+	var constructPackage = function (fromArguments) {
 		/**
 		 *	Takes the arguments from require and bundles them into a
 		 *	dependency object.
@@ -138,16 +148,10 @@ var require = function (src, callback) {
 				dependencies = fromArguments;
 			}
 
-			for (var i = 0; i < dependencies.length; i++) {
-				if(require.completedLoads.indexOf(dependencies[i]) !== -1) {
-					dependencies.splice(i, 1);
-					i--;
-				}
-			}
-
 			// return the dependency package
 			return {
 				name : name,
+				path : require.lastPathLoaded,
 				dependencies : dependencies,
 				callback : subcallback,
 				identifier : subcallback.toString(),
@@ -167,22 +171,17 @@ var require = function (src, callback) {
 			var subcallback = module.callback;
 			var name = module.name;
 			var init = module.init;
-			var dependencies = [];
-			for (var i = 0; i < module.dependencies.length; i++) {
-				if(require.completedLoads.indexOf(module.dependencies[i]) === -1) {
-					dependencies.push(module.dependencies[i]);
-				}
-			}
+			var dependencies = module.dependencies;
 
 			// return the dependency package
 			return {
 				name : name,
+				path : require.lastPathLoaded,
 				dependencies : dependencies,
 				callback : subcallback,
 				init : init,
 				identifier : subcallback.toString(),
 				completed : false,
-				callbackOrder : -1,
 				toString : function () {
 					return '[require() Dependency Module package]';
 				}
@@ -211,7 +210,7 @@ var require = function (src, callback) {
 		return false;
 	};
 	
-	var package = packageDependencies(args);
+	var package = constructPackage(args);
 	
 	if (packageExists(package)) {
 		// the package exists, the module is loading or has loaded,
@@ -227,6 +226,7 @@ var require = function (src, callback) {
 		require.packages.unshift(package);
 		for (var i = 0; i < package.dependencies.length; i++) {
 			var dependency = package.dependencies[i];
+			// queue the dependency for loading
 			if (require.completedLoads.indexOf(dependency) === -1) {
 				// if the dependency has not been loaded
 				var indexOf = require.incompleteLoads.indexOf(dependency);
@@ -236,7 +236,18 @@ var require = function (src, callback) {
 				}
 				// move it to the top, because we need it...now
 				require.incompleteLoads.unshift(dependency);
+				// inialize order the path
+			} else {
+				// if it has been loaded remove the dependency from the package (we don't need to re-load it)
+				package.dependencies.splice(i, 1);
+				i--;
 			}
+			// queue the dependency for initializing
+			var initOrder = require.initOrder.indexOf(dependency);
+			if (initOrder >= 0) {
+				require.initOrder.splice(initOrder, 1);
+			}
+			require.initOrder.unshift(dependency);
 		}
 	};
 	addPackageToRequire(package);
@@ -247,7 +258,10 @@ var require = function (src, callback) {
 		 */
 		var nocache = (Math.random()*100000000).toString()
 		nocache = nocache.substr(0, nocache.indexOf('.'));
-
+		
+		// set the last path loaded
+		require.lastPathLoaded = src;
+		
 		var loadWithTagInjection = function (src, onload) {
 			/**
 			 *	Uses script tag injection to download and exec a js file.
@@ -309,12 +323,11 @@ var require = function (src, callback) {
 		}
 	};
 	
-	// a var to hold how many completed loads, to use with ordering compiled modules
-	var callbackOrder = 0;
 	var resolvePackageDependencies = function() {
 		/**
 		 *	Runs through all packages and calls callbacks in filo order (because they were shifted onto require.packages).
 		 */
+		var packagesCompleted = true;
 		for (var i = 0; i < require.packages.length; i++) {
 			var package = require.packages[i];
 			if (package.completed) {
@@ -322,15 +335,29 @@ var require = function (src, callback) {
 			}
 			if (package.dependencies.length) {
 				console.warn('require::resolvePackageDependencies()',package.name,'still has dependencies');
+				packagesComplete = false;
 				continue;
 			}
 			package.completed = true;
-			package.callbackOrder = callbackOrder++;
-			if (isModule(package)) {
-				window[package.name] = package.init();
-			}
-			package.callback();
 		}
+		if (packagesCompleted) {
+			require.sortPackages();
+			initPackages();
+		}
+	};
+	
+	var initPackage = function(package) {
+		if (isModule(package)) {
+			window[package.name] = package.init();
+		}
+		package.callback();
+	};
+	
+	var initPackages = function() {
+		for (var i = 0; i < require.packages.length; i++) {
+			var package = require.packages[i];
+			initPackage(package);
+		};
 	};
 	
 	var loadNextDependency = function() {
@@ -340,13 +367,16 @@ var require = function (src, callback) {
 		if (require.incompleteLoads.length) {
 			require.loading = true;
 			var dependency = require.incompleteLoads[0];
-			loadScript(dependency, function onLoadedRequiredScript(src) {
+			var onload = function onLoadedRequiredScript(src) {
 				// move the dependency to the loaded list
 				require.completedLoads.unshift(dependency);
 				require.incompleteLoads.splice(require.incompleteLoads.indexOf(dependency), 1);
+				// rinse and repeat
 				removeDependencyFromPackages(dependency);
 				loadNextDependency();
-			});
+			};
+			
+			loadScript(dependency, onload);
 		} else {
 			// there are no more unloaded dependencies,
 			// go through and call the callbacks in order
