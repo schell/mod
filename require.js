@@ -73,8 +73,7 @@ var require = function (src, callback) {
 	var isModule = function (module) {
 		return ('name' 			in module &&
 				'dependencies' 	in module &&
-				'init' 			in module &&
-				'callback' 		in module);
+				'init' 			in module);
 	};
 	// this is the module format
 	/*
@@ -162,6 +161,8 @@ var require = function (src, callback) {
 			if (!isModule(module)) {
 				throw new Error('require() - module is malformed');
 			}
+			
+			module.callback = module.callback || function blankCallback(){};
 			
 			var subcallback = module.callback;
 			var name = module.name;
