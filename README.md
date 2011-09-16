@@ -6,7 +6,7 @@ Use
 ---
 `mod` uses initialization objects (called packages internally) to define modules. An initialization object takes a name, dependencies and an init function. You can supply an optional callback to execute after 'main' has been initialized.
 
-Include mod.js in your <head>:
+Include mod.js in your `<head>`:
 	
 ```html
 <script src="mod.js" type="text/javascript" charset="utf-8"></script>
