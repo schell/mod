@@ -69,6 +69,9 @@ var mod = function (module) {
 	//--------------------------------------
 	mod.reset = function resetRequire() {
 		for (key in mod) {
+			if(typeof mod[key] === 'function') {
+				continue;
+			}
 			delete mod[key];
 		}
 	};
@@ -84,16 +87,21 @@ var mod = function (module) {
 		/**
 		 *	Sorts the packages according to module priority.
 		 */
+		if (!('scripts' in mod)) {
+			return;
+		}
 		var sortFunc = function (packageA, packageB) {
 			var ndxA = mod.scripts.indexOf(packageA.path);
+			if (ndxA === -1) {
+				return 1;
+			}
 			var ndxB = mod.scripts.indexOf(packageB.path);
+			if (ndxB === -1) {
+				return -1;
+			}
 			return ndxA < ndxB ? -1 : ndxA == ndxB ? 0 : 1;
 		};
-		// push '' as a script onto the stack because
-		// the main module has no path
-		mod.scripts.push('');
 		mod.packages.sort(sortFunc);
-		mod.scripts.pop();
 	};
 	mod.compile = function () {
 		/**
@@ -101,13 +109,14 @@ var mod = function (module) {
 		 */
 		mod.sortPackages();
 		var output = '';
-		output += ('/// mod.js compilation '+Date.now().toString());
+		output += ('/// mod.js compilation '+Date.now().toString()+'\n');
+		output += ('var modules = {};');
 		for (var i = 0; i < mod.packages.length; i++) {
 			if (isModule(mod.packages[i])) {
 				var module = mod.packages[i];
 				output += ('\n\n/// '+module.name);
-				output += ('\nvar '+module.name+' = ('+module.init.toString()+')();\n');
-				output += ('('+module.callback.toString()+')();\n');
+				output += ('\nmodules.'+module.name+' = ('+module.init.toString()+')(modules);\n');
+				output += ('('+module.callback.toString()+')(modules);\n');
 			}
 		}
 		return output;

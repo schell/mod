@@ -9,7 +9,7 @@ mod({
 		};
 	},
 	callback : function cbT1_2(mods) {
-		assert.eq(mods.testSeq, '', 'testSeq is blank');
+		mods.testSeq = '';
 		assert.eq('t1_2' in mods, true, 't1_2.js was called and module t1_2 is defined');
 		mods.testSeq += '-t1_2';
 	}

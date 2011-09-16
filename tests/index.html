@@ -31,6 +31,13 @@
 					},
 					callback : function cbMain(modules) {
 						assert.stat();
+						if (mod.scripts) {
+							var compiled = mod.compile();
+							initMod();
+							assert.suite = "Compile tests";
+							eval(compiled);	
+							document.write('<pre>'+compiled+'</pre>');
+						}
 					}
 				});
 			}
