@@ -154,7 +154,6 @@ var require = function (src, callback) {
 				path : require.lastPathLoaded,
 				dependencies : dependencies,
 				callback : subcallback,
-				identifier : subcallback.toString(),
 				completed : false,
 				toString : function () {
 					return '[require() Dependency package]';
@@ -180,7 +179,6 @@ var require = function (src, callback) {
 				dependencies : dependencies,
 				callback : subcallback,
 				init : init,
-				identifier : subcallback.toString(),
 				completed : false,
 				toString : function () {
 					return '[require() Dependency Module package]';
@@ -203,7 +201,7 @@ var require = function (src, callback) {
 		 */
 		for (var i = 0; i < require.packages.length; i++) {
 			var storedPackage = require.packages[i];
-			if (storedPackage.identifier === package.identifier) {
+			if (storedPackage.name === package.name) {
 				return true;
 			}
 		}	
@@ -291,7 +289,6 @@ var require = function (src, callback) {
 				if (request.readyState === 4) {
 					if (request.status === 200 || request.status === 0) {
 						require.compilation += '\n\n/// ' + src + '\n' + request.responseText;
-						window.eval(request.responseText);
 						onload();
 					} else {
 						console.log('Error', request.statusText);
