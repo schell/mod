@@ -166,6 +166,20 @@ var mod = function (module) {
 		return;
 	}
 	
+	var getPackageByScript = function (script) {
+		/**
+		 *	Returns a package by its script path.
+		 */
+		var n = mod.packages.length;
+		for (var i = 0; i < n; i++) {
+			var package = mod.packages[i];
+			if (package.path === script) {
+				return package;
+			}
+		}
+		return false;
+	};
+	
 	var addPackage = function (package) {
 		/**
 		 *	Adds a dependency package to our packages list.
@@ -175,13 +189,29 @@ var mod = function (module) {
 		for (var i = 0; i < package.dependencies.length; i++) {
 			var dependency = package.dependencies[i];
 			var ndx = mod.scripts.indexOf(dependency);
+			var otherDependencies = false;
 			// queue the dependency for loading
 			if (ndx !== -1) {
 				// the dependency has been requested before, cut it out
 				mod.scripts.splice(ndx, 1);
+				// find the module package this dependency defines
+				var dependencyPackage = getPackageByScript(dependency);
+				if (dependencyPackage !== false) {
+					// this dependency has been loaded and has a package/module
+					// associated with it
+					otherDependencies = dependencyPackage.dependencies;
+				}
 			}	
 			// place it on top
 			mod.scripts.unshift(dependency);
+			if (otherDependencies !== false) {
+				for (var j = 0; j < otherDependencies.length; j++) {
+					var otherDependency = otherDependencies[j];
+					var ndx = mod.scripts.indexOf(otherDependency);
+					mod.scripts.splice(ndx, 1);
+					mod.scripts.unshift(otherDependency);
+				}
+			}
 		}
 	};
 	addPackage(package);

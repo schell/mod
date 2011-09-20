@@ -24,6 +24,7 @@
 				mod({
 					name : 'main',
 					dependencies : [
+						'parallel.js',
 						't1.js'
 					],
 					init : function initMain(modules) {
@@ -31,6 +32,7 @@
 					},
 					callback : function cbMain(modules) {
 						assert.stat();
+						
 						if (mod.scripts) {
 							var compiled = mod.compile();
 							initMod();
@@ -38,6 +40,7 @@
 							eval(compiled);	
 							document.write('<pre>'+compiled+'</pre>');
 						}
+						
 					}
 				});
 			}
