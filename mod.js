@@ -330,7 +330,6 @@ var mod = function (module) {
 			// go through and call the callbacks in order
 			mod.loading = false;
 			initPackages();
-			console.warn('done!');
 		}
 	}
 	
