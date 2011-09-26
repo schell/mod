@@ -28,6 +28,18 @@
 						't1.js'
 					],
 					init : function initMain(modules) {
+						// is module tests
+						assert.eq(mod.isModule({
+							name : 'ismod'
+						}), false, 'Object with only name is not a module');
+						assert.eq(mod.isModule({
+							name : 'ismod',
+							dependencies : []
+						}), false, 'Object without init function is not a module');
+						assert.eq(mod.isModule({
+							name : 'ismod',
+							init : function () {}
+						}), true, 'Object with only name and init function is a module');
 						return {};
 					},
 					callback : function cbMain(modules) {

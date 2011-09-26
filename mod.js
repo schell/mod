@@ -78,10 +78,17 @@ var mod = function (module) {
 	//--------------------------------------
 	//  MODULES
 	//--------------------------------------
-	var isModule = function (module) {
-		return ('name' 			in module &&
-				'dependencies' 	in module &&
-				'init' 			in module);
+	var isModule = mod.isModule = function (module) {
+		if (!('name' in module) && (typeof module.name !== "string")) {
+			return false;
+		}
+		if (!('init' in module) && (typeof init !== "function")) {
+			return false;
+		}
+		if (('dependencies' in module) && (module.dependencies instanceof Array) !== true) {
+			return false;
+		}
+		return true;
 	};
 	mod.sortPackages = function () {
 		/**
