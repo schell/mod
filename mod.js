@@ -193,7 +193,7 @@ var mod = function (module) {
 		 */
 		// put the package at the top of the stack (newest is most important)
 		mod.packages.unshift(package);
-		for (var i = 0; i < package.dependencies.length; i++) {
+		for (var i = 0; package.dependencies && i < package.dependencies.length; i++) {
 			var dependency = package.dependencies[i];
 			var ndx = mod.scripts.indexOf(dependency);
 			var otherDependencies = false;
