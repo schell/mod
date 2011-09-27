@@ -30,7 +30,8 @@ and then set up your main module:
 				// loads and initializes dependencies in order
 				var anotherModule = modules.anotherModule;
 				return {
-					someValue : anotherModule.someFunction()
+					someValue : anotherModule.someFunction(),
+					functionToExpose : anotherModule.someFunctionToExpose
 				};
 			},
 			callback : function cbMain(modules) {
