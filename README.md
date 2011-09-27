@@ -1,6 +1,6 @@
 mod
 =======
-A function for defining and loading external js sources/modules. It serves the same purpose as other popular client-side include systems, but aims to be small and easy to understand.
+A function for defining and loading external js sources/modules from a browser. It serves the same purpose as other popular client-side include systems, but aims to be small and easy to understand.
 
 Use
 ---
@@ -47,7 +47,7 @@ and then set up your main module:
 </script>
 ```
 
-In this first call `mod` packages your module initialization object and starts loading its dependencies (either through XMLHttpRequest or script tag injection). Once the dependencies are loaded (which may or may not define more modules and load more scripts), the result of the `init` function is stored in `mod.modules`, in this case as `mod.modules.main`. The loaded modules are exposed to your `init` and `callback` functions as the only parameter, so they don't clutter global space.
+In this first call `mod` packages your module initialization object and starts loading its dependencies (either through XMLHttpRequest or script tag injection). Once the dependencies are loaded (which may or may not define more modules and load more scripts), the result of the `init` function is stored in `mod.modules`, in this case as `mod.modules.Main`. The loaded modules are exposed to your `init` and `callback` functions as the only parameter, so they don't clutter global space.
 
 As an added benefit, you can share data between modules using `mod.modules`.
 
