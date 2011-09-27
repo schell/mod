@@ -281,7 +281,18 @@ var mod = function (module) {
 		/**
 		 *	Initializes a package, references it in the modules object.
 		 */
+		if (package.name in mod.modules) {
+			// this module has already been defined.
+			// this could have happened as a result of
+			// a module getting defined in the init() 
+			// or callback() of another
+			return;
+		}
 		package.completed = true;
+		// we have to define the module before running init(),
+		// because this module may have been defined in the init()
+		// or callback() of another module
+		mod.modules[package.name] = 0;
 		mod.modules[package.name] = package.init(mod.modules);
 		package.callback(mod.modules);
 	};
