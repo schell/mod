@@ -4,7 +4,7 @@ A function for defining and loading external js sources/modules. It serves the s
 
 Use
 ---
-`mod` uses initialization objects (called packages internally) to define modules. An initialization object takes a name, dependencies and an init function. You can supply an optional callback to execute after 'main' has been initialized.
+`mod` uses initialization objects (called packages internally) to define modules. An initialization object takes a name, an init function and optionally an array of dependencies. You can also supply an optional callback to execute after the module has been initialized. Both the init() and callback() are passed an object that contains all the initialized modules thus far.
 
 Include mod.js in your `<head>`:
 	
@@ -21,15 +21,23 @@ and then set up your main module:
 	var onload = function () {
 		// create the main module
 		mod({
-			name : 'main',
+			name : 'Main',
 			dependencies : [
-				't1.js'
+				'anotherModule.js'
 			],
 			init : function initMain(modules) {
-				return {};
+				// we can access anotherModule because mod.js
+				// loads and initializes dependencies in order
+				var anotherModule = modules.anotherModule;
+				return {
+					someValue : anotherModule.someFunction()
+				};
 			},
 			callback : function cbMain(modules) {
-				assert.stat();
+				// we can access Main because callback() is not called
+				// until after Main's init()
+				var Main = modules.Main;
+				window.exposedFunction = Main.functionToExpose;
 			}
 		});
 	}
