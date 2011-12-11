@@ -2,6 +2,7 @@
 	<head>
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
 		<title>mod</title>
+		<script src="http://www.showdown.im/showdown.js" type="text/javascript" charset="utf-8"></script>
 	</head>
 	<body id="index" onload="readme()">
 		<script type="text/javascript" charset="utf-8">
@@ -12,14 +13,16 @@
 					return function (e) {
 						if (request.readyState === 4) {
 							if (request.status === 200 || request.status === 0) {
-								document.write(request.response);
+								var converter = Showdown.converter();
+								var html = converter.makeHtml(request.responseText);
+								document.body.innerHTML = html;
 							} else {
 								document.write('could not get readme for mod.js');
 							}
 						}
 					};
 				};
-				request.send();
+				request.send(null);
 			};
 		</script>
 	</body>
