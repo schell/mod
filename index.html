@@ -3,7 +3,24 @@
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
 		<title>mod</title>
 	</head>
-	<body id="index">
-		Hellow, orld.
+	<body id="index" onload="readme()">
+		<script type="text/javascript" charset="utf-8">
+			var readme = function () {
+				var request = new XMLHttpRequest();
+				request.open('GET', 'http://schell.github.com/mod/README.md', true);
+				request.onreadystatechange = function (card) {
+					return function (e) {
+						if (request.readyState === 4) {
+							if (request.status === 200 || request.status === 0) {
+								document.write(request.response);
+							} else {
+								document.write('could not get readme for mod.js');
+							}
+						}
+					};
+				};
+				request.send();
+			};
+		</script>
 	</body>
 </html>
