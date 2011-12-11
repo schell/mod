@@ -9,18 +9,16 @@
 			var readme = function () {
 				var request = new XMLHttpRequest();
 				request.open('GET', 'http://schell.github.com/mod/README.md', true);
-				request.onreadystatechange = function (card) {
-					return function (e) {
-						if (request.readyState === 4) {
-							if (request.status === 200 || request.status === 0) {
-								var converter = Showdown.converter();
-								var html = converter.makeHtml(request.responseText);
-								document.body.innerHTML = html;
-							} else {
-								document.write('could not get readme for mod.js');
-							}
+				request.onreadystatechange = function (e) {
+					if (request.readyState === 4) {
+						if (request.status === 200 || request.status === 0) {
+							var converter = Showdown.converter();
+							var html = converter.makeHtml(request.responseText);
+							document.body.innerHTML = html;
+						} else {
+							document.write('could not get readme for mod.js');
 						}
-					};
+					}
 				};
 				request.send(null);
 			};
