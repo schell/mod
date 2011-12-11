@@ -12,7 +12,7 @@
 				request.onreadystatechange = function (e) {
 					if (request.readyState === 4) {
 						if (request.status === 200 || request.status === 0) {
-							var converter = Showdown.converter();
+							var converter = new Showdown.converter();
 							var html = converter.makeHtml(request.responseText);
 							document.body.innerHTML = html;
 						} else {
