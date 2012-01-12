@@ -3,8 +3,8 @@
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
 		<title>mod tests</title>
 		<!-- Just load mod -->
-		<script src="assert.js" type="text/javascript" charset="utf-8"></script>
-		<script src="../mod.js" type="text/javascript" charset="utf-8"></script>
+		<script src="tests/assert.js" type="text/javascript" charset="utf-8"></script>
+		<script src="mod.js" type="text/javascript" charset="utf-8"></script>
 	</head>
 	<body id="index" onload="onload">
 		<script type="text/javascript" charset="utf-8">
@@ -17,6 +17,7 @@
 				};
 				mod.nocache = true;
 				mod.useTagInjection = true;
+                mod.basePath = 'tests/';
 			};	
 			var onload = function () {
 				initMod();
