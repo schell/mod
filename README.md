@@ -59,5 +59,3 @@ To do this, load your project in your browser, open the js console and type `mod
 Notes
 -----
 In development situations the scripts `mod` loads can change often. In order to avoid the browser cacheing these files (and returning an old version of your scripts) set `mod.nocache = true`, which will enable the "force re-download" feature. Unfortunately with `mod.nocache` set to true, many javascript debuggers can't set breakpoints on the loaded scripts. Keep this in mind.
-
-See tests/index.html and associated files for more info.
