@@ -64,6 +64,8 @@ var mod = function (module) {
 	mod.useTagInjection = mod.useTagInjection || false;
 	// a string to hold our loaded scripts (for compile)
 	mod.compilation = mod.compilation || '/// - mod.js compilation';
+    // a base path to prefix on all loads
+    mod.basePath = mod.basePath || '';
 	//--------------------------------------
 	//  RESET
 	//--------------------------------------
@@ -249,7 +251,7 @@ var mod = function (module) {
 			if (mod.nocache) {
 				src += '?nocache='+nocache;
 			}
-			script.src = src;
+			script.src = mod.basePath + src;
 		};
 		var loadWithXMLHttpRequest = function (src, onload) {
 			/**
@@ -257,7 +259,7 @@ var mod = function (module) {
 			 *	Also stores the response for compilation.
 			 */
 			var request = new XMLHttpRequest();
-			request.open('GET', src, true);
+			request.open('GET', mod.basePath + src, true);
 			request.onreadystatechange = function (e) {
 				if (request.readyState === 4) {
 					if (request.status === 200 || request.status === 0) {
