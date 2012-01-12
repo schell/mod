@@ -2,18 +2,85 @@
 	<head>
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
 		<title>mod</title>
-		<script src="http://www.showdown.im/showdown.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mod.js" type="text/javascript" charset="utf-8"></script>
+        <script src="tests/assert.js" type="text/javascript" charset="utf-8"></script>
 	</head>
-	<body id="index" onload="readme()">
+	<body id="index" onload="onload">
 		<script type="text/javascript" charset="utf-8">
+    		var initMod = function () {
+    			if (mod.reset) {
+    				mod.reset();
+    			}
+    			mod.modules = {
+    				testSeq : ''
+    			};
+    			mod.nocache = true;
+    			mod.useTagInjection = true;
+                mod.basePath = 'tests/';
+    		};	
+    		var onload = function () {
+    			initMod();
+				
+    			var callbackCount = 0;
+				
+    			// create the main module
+    			mod({
+    				name : 'Main',
+    				dependencies : [
+    					'parallel.js',
+    					't1.js'
+    				],
+    				init : function initMain(modules) {
+    					// is module tests
+    					assert.eq(mod.isModule({
+    						name : 'ismod'
+    					}), false, 'Object with only name is not a module');
+    					assert.eq(mod.isModule({
+    						name : 'ismod',
+    						dependencies : []
+    					}), false, 'Object without init function is not a module');
+    					assert.eq(mod.isModule({
+    						name : 'ismod',
+    						init : function () {}
+    					}), true, 'Object with only name and init function is a module');
+						
+    					mod({
+    						name : 'canDefineModWithoutDependencies',
+    						init : function () {
+    							return {
+    								data : [0, 1, 2, 3]
+    							};
+    						}
+    					});
+    					return {};
+    				},
+    				callback : function cbMain(modules) {
+    					assert.suite = 'Overall Tests';
+    					callbackCount++;
+    					assert.eq('canDefineModWithoutDependencies' in modules, true, 'Can define module without dependencies');
+    					assert.eq(callbackCount, 1, 'Callbacks are only called once (can define module in init)');
+    					assert.stat();
+                        // don't compile, we want the readme to show up
+    					if (false) {
+    						var compiled = mod.compile();
+    						initMod();
+    						assert.suite = "Compile tests";
+    						eval(compiled);	
+    						document.write('<pre>'+compiled+'</pre>');
+                        } else {
+                            readme();
+                        }
+    				}
+    			});
+    		}
+            
 			var readme = function () {
 				var request = new XMLHttpRequest();
 				request.open('GET', 'http://schell.github.com/mod/README.md', true);
 				request.onreadystatechange = function (e) {
 					if (request.readyState === 4) {
 						if (request.status === 200 || request.status === 0) {
-							var converter = new Showdown.converter();
-							var html = converter.makeHtml(request.responseText);
+                            var html = '<xmp>' + request.responseText + '</xmp>';
 							document.body.innerHTML = html;
 						} else {
 							document.write('could not get readme for mod.js');

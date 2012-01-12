@@ -64,6 +64,8 @@ var mod = function (module) {
 	mod.useTagInjection = mod.useTagInjection || false;
 	// a string to hold our loaded scripts (for compile)
 	mod.compilation = mod.compilation || '/// - mod.js compilation';
+    // a base path to use when loading files
+    mod.basePath = mod.basePath || '';
 	//--------------------------------------
 	//  RESET
 	//--------------------------------------
@@ -143,6 +145,12 @@ var mod = function (module) {
 			throw new Error('mod() - module is malformed');
 		}
 		
+        // run through all dependencies and prefix the basePath...
+        for (var i=0; module.dependencies && i < module.dependencies.length; i++) {
+            var path = module.dependencies[i];
+            module.dependencies[i] = mod.basePath + path;
+        };
+        
 		module.path = mod.lastPathLoaded;
 		module.callback = module.callback || function blankCallback(){};
 		module.completed = false;
