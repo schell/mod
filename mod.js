@@ -112,13 +112,14 @@ var mod = function (module) {
 		};
 		mod.packages.sort(sortFunc);
 	};
-	mod.compile = function () {
+	mod.compile = function (name) {
 		/**
-		 *	Compiles the loaded modules into one script for optimization
+		 *	Compiles the loaded modules into one script for optimization.
+         *  @param - String - The name of the function that initializes this project.
 		 */
 		mod.sortPackages();
-		var output = '';
-		output += ('/// mod.js compilation '+Date.now().toString()+'\n');
+        name = name || 'init';
+		var output = 'function init(){';
 		output += ('var modules = {};');
 		for (var i = 0; i < mod.packages.length; i++) {
 			if (isModule(mod.packages[i])) {
@@ -128,6 +129,7 @@ var mod = function (module) {
 				output += ('('+module.callback.toString()+')(modules);\n');
 			}
 		}
+        output += '};';
 		return output;
 	};
 	mod.printCompilation = function () {
