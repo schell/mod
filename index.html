@@ -60,8 +60,11 @@
     					assert.eq('canDefineModWithoutDependencies' in modules, true, 'Can define module without dependencies');
     					assert.eq(callbackCount, 1, 'Callbacks are only called once (can define module in init)');
     					assert.stat();
-                        // don't compile, we want the readme to show up
-    					if (false) {
+                        
+                        // Whether or not we should compile or show the readme...
+                        window = window || false;
+                        var shouldCompile = window && (window.location.href.indexOf('file://') != -1);
+    					if (shouldCompile) {
     						var compiled = mod.compile();
     						initMod();
     						assert.suite = "Compile tests";
