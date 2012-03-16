@@ -144,8 +144,10 @@ var mod = function (module) {
                     unresolved.push(node);
                 }
             }
+            
             if (node === false) {
-                throw new Error('Could not find module defined in '+nodeName);
+                // This node is not a module, but another js script...
+                return resolved;
             }
             
             if (node.dependencies) {
@@ -219,20 +221,6 @@ var mod = function (module) {
         return false;
     };
     
-    var getPackageByScript = function (script) {
-        /**
-         *    Returns a package by its script path.
-         */
-        var n = mod.packages.length;
-        for (var i = 0; i < n; i++) {
-            var package = mod.packages[i];
-            if (package.path === script) {
-                return package;
-            }
-        }
-        return false;
-    };
-    
     var addPackage = function (package) {
         /** * *
         * Adds a dependency package to our packages list.
@@ -262,10 +250,6 @@ var mod = function (module) {
         /** * *
         * Initializes a package, references it in the modules object.
         * * **/
-        // Splice the package back into mod for compilation purposes...
-        if (mod.packages.indexOf(package) === -1) {
-            mod.packages.unshift(package);
-        }
          
         if (package.name in mod.modules) {
             // this module has already been defined.
@@ -275,11 +259,12 @@ var mod = function (module) {
             return;
         }
         package.completed = true;
-        // we have to define the module before running init(),
-        // because this module may have been defined in the init()
-        // or callback() of another module
-        mod.modules[package.name] = 0;
-        mod.modules[package.name] = package.init(mod.modules);
+        try {
+            mod.modules[package.name] = package.init(mod.modules);
+        } catch (e) {
+            console.log(package);
+            throw new Error ('Error initializing '+package.path+'\n'+e);
+        }
         package.callback(mod.modules);
     };
     
@@ -289,16 +274,9 @@ var mod = function (module) {
          */
         mod.sortPackages();
         
-        var packages = mod.packages;
-        // Reset before initializing packages so if
-        // more modules are defined in init or callback
-        // functions we don't run into false circular deps...
-        mod.reset();
-        mod.packages = [];
-        
-        var n = packages.length;
+        var n = mod.packages.length;
         for (var i = 0; i < n; i++) {
-            initPackage(packages[i]);
+            initPackage(mod.packages[i]);
         }
     };
     //--------------------------------------
