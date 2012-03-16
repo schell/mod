@@ -1,10 +1,19 @@
 mod
 =======
-A function for defining and loading external js sources/modules from a browser. It serves the same purpose as other popular client-side include systems, but aims to be small and easy to understand.
+`mod` is a function for defining and loading js modules from a browser. 
+It serves as a method to break your JS project into a tree of maintainable 
+pieces that depend on each other and requires nothing itself. Once your 
+project is loaded you may use mod to compile your code into one monolithic 
+closure.
 
 Use
 ---
-`mod` uses initialization objects (called packages internally) to define modules. An initialization object takes a name, an init function and optionally an array of dependencies. You can also supply an optional callback to execute after the module has been initialized. Both the init() and callback() are passed an object that contains all the initialized modules thus far.
+`mod` uses initialization objects (called packages, internally) to define 
+modules. An initialization object takes a name, an init function and 
+optionally an array of dependencies. You can also supply an optional callback 
+to execute after the module has been initialized. Both the init() and 
+callback() are passed an object that contains all the initialized modules 
+thus far.
 
 Include mod.js in your `<head>`:
 	
@@ -12,7 +21,7 @@ Include mod.js in your `<head>`:
 <script src="mod.js" type="text/javascript" charset="utf-8"></script>
 ```
 
-and then set up your main module:
+and then set up your main module, which will be the entry point (or root) of your project:
 
 ```html
 <script type="text/javascript" charset="utf-8">
@@ -27,7 +36,7 @@ and then set up your main module:
 			],
 			init : function initMain(modules) {
 				// we can access anotherModule because mod.js
-				// loads and initializes dependencies in order
+				// initializes dependencies in order
 				var anotherModule = modules.anotherModule;
 				return {
 					someValue : anotherModule.someFunction(),
