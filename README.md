@@ -1,10 +1,10 @@
 mod
 =======
-`mod` is a function for defining and loading js modules from a browser. 
-It serves as a method to break your JS project into a tree of maintainable 
-pieces that depend on each other and requires nothing itself. Once your 
-project is loaded you may use mod to compile your code into one monolithic 
-closure.
+`mod` is a function for defining and loading JS modules from a browser. 
+It serves as a method to break your project into a tree of maintainable 
+pieces that depend on each other, much like an include or import statement. 
+Once your project is loaded you may use mod to compile your code into one 
+monolithic closure.
 
 Use
 ---
