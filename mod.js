@@ -164,6 +164,16 @@ var mod = function (module) {
         
         mod.packages = resolve('main');
     };
+    mod.printInitOrder = function () {
+        /** * *
+        * Prints the order of initilization of modules to the console.
+        * Used for debugging.
+        * * **/
+        mod.sortPackages();
+        for (var i=0; i < mod.packages.length; i++) {
+            console.log(i,mod.packages[i].name,mod.packages[i].path);
+        }
+    };
     mod.compile = function (name) {
         /**
          *    Compiles the loaded modules into one script for optimization.
@@ -207,7 +217,6 @@ var mod = function (module) {
         };
         return module;
     };
-    
     var packageExists = function (package) {
         /**
          *    Returns whether a package exists in the packages list.
@@ -220,7 +229,6 @@ var mod = function (module) {
         }    
         return false;
     };
-    
     var addPackage = function (package) {
         /** * *
         * Adds a dependency package to our packages list.
@@ -267,7 +275,6 @@ var mod = function (module) {
         }
         package.callback(mod.modules);
     };
-    
     var initPackages = function () {
         /**
          *    Initializes all packages.
