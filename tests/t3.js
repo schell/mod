@@ -1,7 +1,7 @@
 mod({
 	name : 't3',
 	dependencies : [
-		't2.js',
+		'tests/t2.js',
 	],
 	init : function initT3(mods) {
 		console.warn('initializing t3');

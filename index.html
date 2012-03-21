@@ -15,7 +15,10 @@
                     testSeq : ''
                 };
                 mod.useTagInjection = true;
-                mod.basePath = 'tests/';
+                mod.expansions = {
+                    URLExpansion : 'tests/outer/inner/',
+                    Deepest : 'deepest/'
+                };
             };    
             var onload = function () {
                 initMod();
@@ -26,8 +29,10 @@
                 mod({
                     name : 'Main',
                     dependencies : [
-                        'parallel.js',
-                        't1.js'
+                        'tests/parallel.js',
+                        'tests/t1.js',
+                        'URLExpansion::ExpansionTest.js', // To test the url expansion feature...
+                        'URLExpansion::Deepest::DoubleExpansion.js'
                     ],
                     init : function initMain(modules) {
                         // is module tests
@@ -43,6 +48,8 @@
                             init : function () {}
                         }), true, 'Object with only name and init function is a module');
                         
+                        assert.eq(mod.modules.ExpansionTest, 0xBEEF, 'Can expand paths by key.');
+                        assert.eq(mod.modules.DoubleExpansion, 0xFACE, 'Can expand paths by multiple keys.');
                         return {};
                     },
                     callback : function cbMain(modules) {

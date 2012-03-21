@@ -64,8 +64,8 @@ var mod = function (module) {
     mod.useTagInjection = mod.useTagInjection || false;
     // A string to hold our loaded scripts (for compile)
     mod.compilation = mod.compilation || '/// - mod.js compilation';
-    // A base path to prefix when loading files
-    mod.basePath = mod.basePath || '';
+    // An object that maps basepath names to basepath urls...
+    mod.expansions = mod.expansions || {};
     //--------------------------------------
     //  RESET
     //--------------------------------------
@@ -300,6 +300,22 @@ var mod = function (module) {
         mod.lastPathLoaded = src;
         mod.loadedScripts.unshift(src);
         
+        var expandURL = function (src) {
+            var source = src;
+            var matches = src.match(/[^:]*::/g);
+            if (matches) {
+                console.log('found matches',matches,'for',source);
+                matches.map(function(match,ndx) {
+                    var key = match.substr(0,match.length-2);
+                    if (key in mod.expansions) {
+                        source = source.replace(match, mod.expansions[key]);
+                    }
+                    console.log(source);
+                });
+            }
+            return source;
+        }
+        
         var loadWithTagInjection = function (src, onload) {
             /**
              *    Uses script tag injection to download and exec a js file.
@@ -315,7 +331,10 @@ var mod = function (module) {
             if (mod.nocache) {
                 src += '?nocache='+nocache;
             }
-            script.src = mod.basePath + src;
+            //TODO: Create a URL scheme-like object to do basePath matches on,
+            // so one can have multiple basePaths that point to different directories
+            // and the like...
+            script.src = src;
         };
         var loadWithXMLHttpRequest = function (src, onload) {
             /**
@@ -323,6 +342,7 @@ var mod = function (module) {
              *    Also stores the response for compilation.
              */
             var request = new XMLHttpRequest();
+            var source = src;
             request.open('GET', mod.basePath + src, true);
             request.onreadystatechange = function (e) {
                 if (request.readyState === 4) {
@@ -336,10 +356,12 @@ var mod = function (module) {
             request.send(null);
         };
         
+        var URL = expandURL(src);
+        
         if (mod.useTagInjection) {
-            loadWithTagInjection(src, onload);
+            loadWithTagInjection(URL, onload);
         } else {
-            loadWithXMLHttpRequest(src, onload);
+            loadWithXMLHttpRequest(URL, onload);
         }
     };
     
