@@ -31,11 +31,12 @@
                     dependencies : [
                         'tests/parallel.js',
                         'tests/t1.js',
-                        'URLExpansion::ExpansionTest.js', // To test the url expansion feature...
-                        'URLExpansion::Deepest::DoubleExpansion.js'
+                        'URLExpansion::ExpansionTest.js', // Test the url expansion feature...
+                        'URLExpansion::Deepest::DoubleExpansion.js',
+                        'http://schell.github.com/go/go.js' // Test we can load external (non-module) js...
                     ],
                     init : function initMain(modules) {
-                        // is module tests
+                        // Is module tests
                         assert.eq(mod.isModule({
                             name : 'ismod'
                         }), false, 'Object with only name is not a module');
@@ -47,9 +48,11 @@
                             name : 'ismod',
                             init : function () {}
                         }), true, 'Object with only name and init function is a module');
-                        
+                        // URL expansion tests...
                         assert.eq(mod.modules.ExpansionTest, 0xBEEF, 'Can expand paths by key.');
                         assert.eq(mod.modules.DoubleExpansion, 0xFACE, 'Can expand paths by multiple keys.');
+                        // Standard JS test...
+                        assert.eq('go' in window, true, 'Can load external, non-module source files.');
                         return {};
                     },
                     callback : function cbMain(modules) {
