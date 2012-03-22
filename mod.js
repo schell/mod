@@ -304,13 +304,11 @@ var mod = function (module) {
             var source = src;
             var matches = src.match(/[^:]*::/g);
             if (matches) {
-                console.log('found matches',matches,'for',source);
                 matches.map(function(match,ndx) {
                     var key = match.substr(0,match.length-2);
                     if (key in mod.expansions) {
                         source = source.replace(match, mod.expansions[key]);
                     }
-                    console.log(source);
                 });
             }
             return source;
