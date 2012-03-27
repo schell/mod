@@ -23,11 +23,9 @@
             var onload = function () {
                 initMod();
                 
-                var callbackCount = 0;
-                
                 // create the main module
                 mod({
-                    name : 'Main',
+                    name : 'main',
                     dependencies : [
                         'tests/parallel.js',
                         'tests/t1.js',
@@ -36,6 +34,8 @@
                         'http://schell.github.com/go/go.js' // Test we can load external (non-module) js...
                     ],
                     init : function initMain(modules) {
+                        modules.callbackCount = 0;
+                        
                         // Is module tests
                         assert.eq(mod.isModule({
                             name : 'ismod'
@@ -49,33 +49,41 @@
                             init : function () {}
                         }), true, 'Object with only name and init function is a module');
                         // URL expansion tests...
-                        assert.eq(mod.modules.ExpansionTest, 0xBEEF, 'Can expand paths by key.');
-                        assert.eq(mod.modules.DoubleExpansion, 0xFACE, 'Can expand paths by multiple keys.');
+                        assert.eq(modules.ExpansionTest, 0xBEEF, 'Can expand paths by key.');
+                        assert.eq(modules.DoubleExpansion, 0xFACE, 'Can expand paths by multiple keys.');
                         // Standard JS test...
                         assert.eq('go' in window, true, 'Can load external, non-module source files.');
                         return {};
                     },
                     callback : function cbMain(modules) {
                         assert.suite = 'Overall Tests';
-                        callbackCount++;
-                        assert.eq(callbackCount, 1, 'Callbacks are only called once (can define module in init)');
-                        
-                        // Whether or not we should compile or show the readme...
-                        window = window || false;
-                        var shouldCompile = window && (window.location.href.indexOf('file://') != -1);
-                        if (shouldCompile) {
-                            var compiled = mod.compile();
-                            initMod();
-                            assert.suite = "Compile tests";
-                            eval(compiled);    
-                            document.write('<pre>'+compiled+'</pre>');
-                        } else {
-                            readme();
-                        }
+                        modules.callbackCount++;
+                        assert.eq(modules.callbackCount, 1, 'Callbacks are only called once (can define module in init)');
                     }
                 }).onload(function(m) {
+                    // Anything in this onload function does NOT get compiled
+                    // into the project. This is for conducting business after
+                    // all scripts have been loaded and all modules init'd...
                     console.log('Can execute onload after all loading.');
                     assert.stat();
+                    console.log('\n\nFirst run through is done. Now we\'ll test the compiled code...');
+                    
+                    // Whether or not we should compile or show the readme...
+                    window = window || false;
+                    var shouldCompile = window && (window.location.href.indexOf('file://') != -1);
+                    if (shouldCompile) {
+                        var compiled = mod.compile();
+                        initMod();
+                        assert.suite = "Compile tests";
+                        
+                        var modules = eval(compiled);   
+                        assert.eq('main' in modules, true, 'Compilation returns initialized modules.');
+                        
+                        document.write('<pre>'+compiled+'</pre>');
+                        assert.stat();
+                    } else {
+                        readme();
+                    }
                 });
                 
                 return {};

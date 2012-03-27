@@ -174,24 +174,24 @@ var mod = function (module) {
             console.log(i,mod.packages[i].name,mod.packages[i].path);
         }
     };
-    mod.compile = function (name) {
+    mod.compile = function () {
         /**
          *    Compiles the loaded modules into one script for optimization.
-         *  @param - String - The name of the function that initializes this project.
          */
         mod.sortPackages();
-        name = name || 'init';
-        var output = 'function init(){';
+        var output = '(function initModCompilation(){';
         output += ('var modules = {};');
         for (var i = 0; i < mod.packages.length; i++) {
             if (isModule(mod.packages[i])) {
                 var module = mod.packages[i];
                 output += ('\n\n/// '+module.name);
                 output += ('\nmodules.'+module.name+' = ('+module.init.toString()+')(modules);\n');
-                output += ('('+module.callback.toString()+')(modules);\n');
+                if ('callback' in module) {
+                    output += ('('+module.callback.toString()+')(modules);\n');
+                }
             }
         }
-        output += '};';
+        output += 'return modules;}())';
         return output;
     };
     mod.printCompilation = function () {
@@ -210,7 +210,6 @@ var mod = function (module) {
         }
         
         module.path = mod.lastPathLoaded;
-        module.callback = module.callback || function blankCallback(){};
         module.completed = false;
         module.toString = function () {
             return '[mod() Dependency Module package]';
@@ -273,7 +272,9 @@ var mod = function (module) {
             console.log(package);
             throw new Error ('Error initializing '+package.path+'\n'+e);
         }
-        package.callback(mod.modules);
+        if ('callback' in package) {
+            package.callback(mod.modules);
+        }
     };
     // A private placeholder function that executes
     // after all loading and all initialization...
