@@ -59,7 +59,6 @@
                         assert.suite = 'Overall Tests';
                         callbackCount++;
                         assert.eq(callbackCount, 1, 'Callbacks are only called once (can define module in init)');
-                        assert.stat();
                         
                         // Whether or not we should compile or show the readme...
                         window = window || false;
@@ -74,7 +73,11 @@
                             readme();
                         }
                     }
+                }).onload(function(m) {
+                    console.log('Can execute onload after all loading.');
+                    assert.stat();
                 });
+                
                 return {};
             }();
             

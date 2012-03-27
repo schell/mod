@@ -133,7 +133,7 @@ var mod = function (module) {
                         // has already been traversed, meaning a circular
                         // dependency...
                         var circle = nodeName;
-                        for (var i = unresolved.length - 1; i >= 0; i--){
+                        for (i = unresolved.length - 1; i >= 0; i--){
                             circle += ' <- '+unresolved[i].path;
                             if (unresolved[i].path == nodeName) {
                                 break;
@@ -151,7 +151,7 @@ var mod = function (module) {
             }
             
             if (node.dependencies) {
-                for (var i=0; i < node.dependencies.length; i++) {
+                for (i=0; i < node.dependencies.length; i++) {
                     resolve(node.dependencies[i], resolved, unresolved);
                 }
             }
@@ -275,6 +275,10 @@ var mod = function (module) {
         }
         package.callback(mod.modules);
     };
+    // A private placeholder function that executes
+    // after all loading and all initialization...
+    var _onload = function emptyFunction(){};
+    
     var initPackages = function () {
         /**
          *    Initializes all packages.
@@ -285,6 +289,8 @@ var mod = function (module) {
         for (var i = 0; i < n; i++) {
             initPackage(mod.packages[i]);
         }
+        // At the end of all initialization perform the onload...
+        _onload(mod.modules);
     };
     //--------------------------------------
     //  LOADING
@@ -409,4 +415,10 @@ var mod = function (module) {
     if (!mod.loading) {
         loadNextDependency();
     }
+    
+    return {
+        onload : function(todo) {
+            _onload = todo;
+        }
+    };
 };
