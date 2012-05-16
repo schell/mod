@@ -28,14 +28,14 @@
                 mod({
                     name : 'main',
                     dependencies : [
-                        'tests/assert.js',
                         'tests/parallel.js',
                         'tests/t1.js',
                         'URLExpansion::ExpansionTest.js', // Test the url expansion feature...
                         'URLExpansion::Deepest::DoubleExpansion.js',
+                        'tests/assert.js',
                         'http://schell.github.com/go/go.js' // Test we can load external (non-module) js...
                     ],
-                    init : function initMain(modules) {
+                    init : function initMain(parallel, t1, exansionTest, double) {
                         modules.callbackCount = 0;
                         
                         // Is module tests

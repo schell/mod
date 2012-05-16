@@ -34,8 +34,7 @@
     var mod = function (module) {
         module = module || {
             name : false,
-            init : false,
-            callback : false
+            init : false
         };
         //--------------------------------------
         //  PROPERTIES
@@ -221,9 +220,6 @@
                     var module = mod.pkgs[i];
                     output += ('\n\n/// '+module.name);
                     output += ('\nmodules.'+module.name+' = ('+module.init.toString()+')(modules);\n');
-                    if ('callback' in module) {
-                        output += ('('+module.callback.toString()+')(modules);\n');
-                    }
                 }
             }
             output += 'return modules;}())';
@@ -271,8 +267,7 @@
         * * **/
         var addPkg = function (pkg) {
             if (pkgExists(pkg)) {
-                // The pkg exists, the module is loading or has loaded,
-                // its callback has either been called or doesn't need to be...
+                // The pkg exists, the module is loading or has loaded...
                 return;
             }
         
@@ -299,18 +294,16 @@
                 // this module has already been defined.
                 // this could have happened as a result of
                 // a module getting defined in the init() 
-                // or callback() of another
+                // of another
                 return;
             }
             pkg.completed = true;
             try {
+                
                 mod.modules[pkg.name] = pkg.init(mod.modules);
             } catch (e) {
                 console.log(pkg);
                 throw new Error ('Error initializing '+pkg.path+'\n'+e);
-            }
-            if ('callback' in pkg) {
-                pkg.callback(mod.modules);
             }
         };
         // A private placeholder function that executes
@@ -447,7 +440,7 @@
                 loadScript(script, onload);
             } else {
                 // there are no more unloaded dependencies,
-                // go through and call the callbacks in order
+                // initialize the modules...
                 mod.loading = false;
                 initPkgs();
             }
