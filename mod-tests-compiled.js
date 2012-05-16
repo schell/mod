@@ -1,6 +1,7 @@
 (function initModCompilation(window) {
     var modules = {};/// testSeq from tests/testSeq.js
-    modules.testSeq = {seq:""};
+    modules.testSeq = {
+seq:"";
 /// t2_1 from tests/t2_1.js
     modules.t2_1 = (function initT2_1(testSeq) {
 		console.warn('initializing t2_1');

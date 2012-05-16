@@ -12,9 +12,6 @@
                     if (mod.reset) {
                         mod.reset();
                     }
-                    mod.modules = {
-                        testSeq : ''
-                    };
                     mod.useTagInjection = true;
                     mod.expansions = {
                         URLExpansion : 'tests/outer/inner/',
@@ -35,9 +32,8 @@
                         'tests/assert.js',
                         'http://schell.github.com/go/go.js' // Test we can load external (non-module) js...
                     ],
-                    init : function initMain(parallel, t1, exansionTest, double) {
-                        modules.callbackCount = 0;
-                        
+                    init : function initMain(parallel, t1, expansionTest, double) {
+                        var modules = mod.modules;
                         // Is module tests
                         assert.eq(mod.isModule({
                             name : 'ismod'
@@ -51,16 +47,11 @@
                             init : function () {}
                         }), true, 'Object with only name and init function is a module');
                         // URL expansion tests...
-                        assert.eq(modules.ExpansionTest, 0xBEEF, 'Can expand paths by key.');
-                        assert.eq(modules.DoubleExpansion, 0xFACE, 'Can expand paths by multiple keys.');
+                        assert.eq(expansionTest, 0xBEEF, 'Can expand paths by key.');
+                        assert.eq(double, 0xFACE, 'Can expand paths by multiple keys.');
                         // Standard JS test...
                         assert.eq('go' in window, true, 'Can load external, non-module source files.');
                         return {};
-                    },
-                    callback : function cbMain(modules) {
-                        assert.suite = 'Overall Tests';
-                        modules.callbackCount++;
-                        assert.eq(modules.callbackCount, 1, 'Callbacks are only called once (can define module in init)');
                     }
                 }).onload(function(m) {
                     // Anything in this onload function does NOT get compiled
@@ -74,11 +65,16 @@
                     window = window || false;
                     var shouldCompile = window && (window.location.href.indexOf('file://') != -1);
                     if (shouldCompile) {
-                        var compiled = mod.compile();
+                        var compiled = mod.compilation;
                         initMod();
                         assert.suite = "Compile tests";
-                        
-                        var modules = eval(compiled);   
+                        debugger;
+                        try {
+                            var modules = eval(compiled);   
+                        } catch (e) {
+                            console.error('error in source: \n'+compiled+'\n'+e.toString());
+                            debugger;
+                        }
                         assert.eq('main' in modules, true, 'Compilation returns initialized modules.');
                         
                         document.write('<pre>'+compiled+'</pre>');

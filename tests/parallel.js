@@ -4,15 +4,14 @@ mod({
 		'tests/t3.js',
 		'tests/t2.js',
 	],
-	init : function initParallel(mods) {
+	init : function initParallel(t3, t2) {
 		console.warn('initializing parallel');
-		return {
+		assert.suite = "Parallel tests";
+		assert.eq(t3.name, 't3', 't3 is passed to parallel.');
+		assert.eq(t2.name, 't2', 't2 is passed to parallel.');
+	    
+    	return {
 			name : 'parallel'
 		};
-	},
-	callback : function cbParallel(mods) {
-		assert.suite = "Parallel tests";
-		assert.eq('t2' in mods, true, 't2.js was called and module t2 is defined');
-		assert.eq('t3' in mods, true, 't3.js was called and module t3 is defined');
 	}
 });

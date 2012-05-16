@@ -1,16 +1,17 @@
 mod({
 	name : 't1_3',
 	dependencies : [
+        'tests/testSeq.js',
 		'tests/t1_2.js'
 	],
-	init : function initT1_3(mods) {
+	init : function initT1_3(testSeq, t1_2) {
 		console.warn('initializing t1_3');
+        
+        assert.eq(t1_2.name, 't1_2', 't1_2 is loaded.');
+		testSeq.seq += '-t1_3';
+        
 		return {
 			name : 't1_3'
 		};
-	},
-	callback : function cbT1_3(mods) {
-		assert.eq('t1_3' in mods, true, 't1_3.js was called and module t1_3 is defined');
-		mods.testSeq += '-t1_3';
 	}
 });

@@ -1,3 +1,0 @@
-[submodule "submodules/mod"]
-	path = submodules/mod
-	url = git://github.com/schell/mod.git
