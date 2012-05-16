@@ -1,7 +1,6 @@
 (function initModCompilation(window) {
     var modules = {};/// testSeq from tests/testSeq.js
-    modules.testSeq = {
-seq:"";
+    modules.testSeq = {seq:""};
 /// t2_1 from tests/t2_1.js
     modules.t2_1 = (function initT2_1(testSeq) {
 		console.warn('initializing t2_1');
@@ -40,7 +39,7 @@ seq:"";
     	return {
 			name : 'parallel'
 		};
-	})(modules.t3,modules.t2);
+    })(modules.t3,modules.t2);
 /// t1_2 from tests/t1_2.js
     modules.t1_2 = (function initT1_2(testSeq) {
 		console.warn('initializing t1_2');

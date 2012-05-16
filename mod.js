@@ -27,15 +27,14 @@
 * @since    Thu Jul 21 10:33:36 PDT 2011
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * **/
 (function(window) {
-    var console = console || {log:function(){}};
+    var console = window.console || {log:function(){}};
     /** * *
     * 
     * * **/
     var mod = function (module) {
         module = module || {
             name : false,
-            init : false,
-            callback : false
+            init : false
         };
         //--------------------------------------
         //  PROPERTIES
@@ -208,47 +207,29 @@
                 console.log(i,mod.pkgs[i].name,mod.pkgs[i].path);
             }
         };
-        /** * *
-        * Compiles the loaded modules into one script for deployment.
-        * @return {string} A string of source code.
-        * * **/
-        mod.compile = function () {
-            mod.sortPkgs();
-            var output = '(function initModCompilation(){';
-            output += ('var modules = {};');
-            for (var i = 0; i < mod.pkgs.length; i++) {
-                if (isModule(mod.pkgs[i])) {
-                    var module = mod.pkgs[i];
-                    output += ('\n\n/// '+module.name);
-                    output += ('\nmodules.'+module.name+' = ('+module.init.toString()+')(modules);\n');
-                    if ('callback' in module) {
-                        output += ('('+module.callback.toString()+')(modules);\n');
-                    }
-                }
-            }
-            output += 'return modules;}())';
-            return output;
-        };
         //--------------------------------------
         //  PACKAGES
         //--------------------------------------
         /** * *
         * Takes the arguments from mod and bundles them into a
         * dependency object.
-        * @param {Object} module
+        * @param {Object} pkg
         * @return {Object}
         * * **/
-        var constructPkg = function (module) {
-            if (!isModule(module)) {
-                throw new Error('mod() - module is malformed');
+        var constructPkg = function (pkg) {
+            if (!isModule(pkg)) {
+                throw new Error('Package is malformed');
             }
         
-            module.path = mod.lastPathLoaded;
-            module.completed = false;
-            module.toString = function () {
-                return '[mod() Dependency Module pkg]';
+            pkg.path = mod.lastPathLoaded;
+            pkg.completed = false;
+            pkg.initString = '';
+            pkg.toString = function () {
+                var output = ('/// '+pkg.name+' from '+pkg.path);
+                output += ('\n    modules.'+pkg.name+' = '+pkg.initString+';\n');
+                return output;
             };
-            return module;
+            return pkg;
         };
         /** * *
         * Returns whether a pkg exists in the pkgs list.
@@ -271,8 +252,7 @@
         * * **/
         var addPkg = function (pkg) {
             if (pkgExists(pkg)) {
-                // The pkg exists, the module is loading or has loaded,
-                // its callback has either been called or doesn't need to be...
+                // The pkg exists, the module is loading or has loaded...
                 return;
             }
         
@@ -290,7 +270,7 @@
     
         var pkg = constructPkg(module);
         addPkg(pkg);
-
+        
         /** * *
         * Initializes a pkg and references it in the modules object.
         * * **/
@@ -299,18 +279,54 @@
                 // this module has already been defined.
                 // this could have happened as a result of
                 // a module getting defined in the init() 
-                // or callback() of another
+                // of another
                 return;
             }
             pkg.completed = true;
+            var initParams = [];
             try {
-                mod.modules[pkg.name] = pkg.init(mod.modules);
+                switch (typeof pkg.init) {
+                    case 'function':
+                        // Get the modules that this pkg depends on...
+                        var modulePkgs = mod.pkgs.slice();
+                        var params = pkg.dependencies.map(function (dependency) {
+                            for (var i=0; i < modulePkgs.length; i++) {
+                                var modulePkg = modulePkgs[i];
+                                if (modulePkg.path === dependency) {
+                                    // We've found the dependency's module package,
+                                    // now get the module...
+                                    var module = mod.modules[modulePkg.name];
+                                    if (!module) {
+                                        throw new Error('Module '+modulePkg.name+' has not been initialized.');
+                                    }
+                                    modulePkgs.splice(i, 1);
+                                    // Add the module name to the list of parameters for the package...
+                                    initParams.push(modulePkg.name);
+                                    return module;
+                                }
+                            }
+                            // This dependency did not define a module...
+                            return false;
+                        }).filter(function (module) {
+                            return module;
+                        });
+                        mod.modules[pkg.name] = pkg.init.apply(null, params);
+                        // Set its initString for compilation later...
+                        pkg.initString = stringifyFactory(pkg.init, initParams);
+                    break;
+                    
+                    case 'object':
+                        mod.modules[pkg.name] = pkg.init;
+                        // Set its initString for compilation later...
+                        pkg.initString = stringifyFactory(pkg.init);
+                    break;
+                    
+                    default:
+                        throw new Error('Factory must be a function or Object.');
+                }
             } catch (e) {
                 console.log(pkg);
                 throw new Error ('Error initializing '+pkg.path+'\n'+e);
-            }
-            if ('callback' in pkg) {
-                pkg.callback(mod.modules);
             }
         };
         // A private placeholder function that executes
@@ -318,15 +334,59 @@
         var _onload = function emptyFunction(){};
         
         /** * *
+        * Stringifys a module factory.
+        * @param {Object|function(...)} init
+        * @param {?Array.<string>}
+        * @return string
+        * * **/
+        function stringifyFactory(init, params) {
+            switch (typeof init) {
+                case 'function':
+                    var parameters = '';
+                    if (params.length) {
+                        parameters = 'modules.'+params[0];
+                        for (var i=1; i < params.length; i++) {
+                            parameters += ',modules.'+params[i];
+                        }
+                    }
+                    
+                    return '('+init.toString()+')('+parameters+')';
+                        
+                case 'object':
+                    var s = '{';
+                    for (var key in init) {
+                        s += key + ':' + stringifyFactory(init[key]);
+                        s += ',';
+                    }
+                    s = s.substr(0, s.length-1);
+                    s += '}';
+                    return s;
+                        
+                case 'string':
+                    return '"'+init.toString()+'"';
+                        
+                default:
+                    return init.toString();
+            }
+        }
+        /** * *
         * Initializes all pkgs.
         * * **/
         var initPkgs = function () {
             mod.sortPkgs();
-        
+            var output = '(function initModCompilation(window) {\n';
+            output += ('    var modules = {};');
+            
             var n = mod.pkgs.length;
             for (var i = 0; i < n; i++) {
                 initPkg(mod.pkgs[i]);
+                output += mod.pkgs[i].toString();
             }
+            
+            output += '    return modules;\n';
+            output += '}(window));';
+            mod.compilation = output;
+            
             // At the end of all initialization perform the onload...
             _onload(mod.modules);
         };
@@ -447,7 +507,7 @@
                 loadScript(script, onload);
             } else {
                 // there are no more unloaded dependencies,
-                // go through and call the callbacks in order
+                // initialize the modules...
                 mod.loading = false;
                 initPkgs();
             }
@@ -464,4 +524,26 @@
         };
     };
     window.mod = mod;
+    //--------------------------------------
+    //  AMD COMPLIANCE
+    //--------------------------------------
+    /** * *
+    * Defines a module using the AMD spec.
+    * https://github.com/amdjs/amdjs-api/wiki/AMD
+    * @param {?string} id The id of the module.
+    * @param {?Array.<string>} dependencies The modules this module depends on.
+    * @param {function|Object} factory The value of the module.
+    * * **/
+    function define(id, dependencies, factory) {
+        var args = Array.prototype.slice.call(arguments);
+        factory = args.pop();
+        dependencies = args.pop();
+        id = args.pop();
+        mod({
+            name : id,
+            dependencies : dependencies,
+            init : factory
+        });
+    }
+    window.define = window.define || define;
 })(window);

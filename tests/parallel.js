@@ -1,10 +1,9 @@
-mod({
-	name : 'parallel',
-	dependencies : [
+define('parallel',
+    [
 		'tests/t3.js',
-		'tests/t2.js',
+		'tests/t2.js'
 	],
-	init : function initParallel(t3, t2) {
+	function initParallel(t3, t2) {
 		console.warn('initializing parallel');
 		assert.suite = "Parallel tests";
 		assert.eq(t3.name, 't3', 't3 is passed to parallel.');
@@ -13,5 +12,5 @@ mod({
     	return {
 			name : 'parallel'
 		};
-	}
-});
+    }
+);
