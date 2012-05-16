@@ -1,123 +1,467 @@
-(function initModCompilation(window) {
-    var modules = {};/// testSeq from tests/testSeq.js
-    modules.testSeq = {seq:""};
-/// t2_1 from tests/t2_1.js
-    modules.t2_1 = (function initT2_1(testSeq) {
-		console.warn('initializing t2_1');
-        testSeq.seq += '-t2_1';
-		return {
-			name : 't2_1'
-		};
-	})(modules.testSeq);
-/// t2 from tests/t2.js
-    modules.t2 = (function initT2(t2_1, testSeq) {
-        console.warn('initializing t2');
-
-        assert.suite = "T2 tests";
-        assert.eq(t2_1.name, 't2_1', 't2_1 is loaded.');
-        testSeq.seq += '-t2';
-        
-        return {
-            name : 't2'
+/** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* mod.js
+* A system for defining modules and loading external js sources.
+* 
+* MIT LICENSE
+* Copyright (C) 2011 by Schell Scivally
+* 
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+* 
+* The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
+* 
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+* THE SOFTWARE.
+* 
+* @author    Schell Scivally
+* @since    Thu Jul 21 10:33:36 PDT 2011
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * **/
+(function(window) {
+    var console = console || {log:function(){}};
+    /** * *
+    * 
+    * * **/
+    var mod = function (module) {
+        module = module || {
+            name : false,
+            init : false,
+            callback : false
         };
-    })(modules.t2_1,modules.testSeq);
-/// t3 from tests/t3.js
-    modules.t3 = (function initT3(t2) {
-		console.warn('initializing t3');
-        assert.eq(t2.name, 't2', 't2 is passed to t3.');
-		return {
-			name : 't3'
-		};
-	})(modules.t2);
-/// parallel from tests/parallel.js
-    modules.parallel = (function initParallel(t3, t2) {
-		console.warn('initializing parallel');
-		assert.suite = "Parallel tests";
-		assert.eq(t3.name, 't3', 't3 is passed to parallel.');
-		assert.eq(t2.name, 't2', 't2 is passed to parallel.');
-	    
-    	return {
-			name : 'parallel'
-		};
-	})(modules.t3,modules.t2);
-/// t1_2 from tests/t1_2.js
-    modules.t1_2 = (function initT1_2(testSeq) {
-		console.warn('initializing t1_2');
+        //--------------------------------------
+        //  PROPERTIES
+        //--------------------------------------
+        /** * *
+        * Whether or not mod is currently loading.
+        * @type {boolean}
+        * * **/
+        mod.loading = mod.loading || false;
+        /** * *
+        * A reference to the path of the last pkg loaded.
+        * (We don't know the pkg name until loading is complete, 
+        * at which point we don't know the pkg path.)
+        * @type {string}
+        * * **/
+        mod.lastPathLoaded = mod.lastPathLoaded || 'main';
+        /** * *
+        * A reference to the DOM's head tag.
+        * @type {HTMLHeadElement}
+        * * **/
+        mod.head = mod.head || document.getElementsByTagName('head')[0];
+        /** * *
+        * All the modules (groups of dependencies) we've at least started loading.
+        * @type {Object}
+        * * **/
+        mod.modules = mod.modules || {};
+        /** * *
+        * An array of modules queued to load.
+        * @type {Array.<Object>}
+        * * **/
+        mod.pkgs = mod.pkgs || [];
+        /** * *
+        * An array of scripts to load.
+        * @type {Array.<string>}
+        * * **/
+        mod.scripts = mod.scripts || [];
+        /** * *
+        * An array of scripts we've already loaded.
+        * @type {Array.<string>}
+        * * **/
+        mod.loadedScripts = mod.loadedScripts || [];
+        /** * *
+        * Whether or not to force the browser not to cache sources.
+        * @type {boolean}
+        * * **/
+        mod.nocache = mod.nocache || false;
+        /** * *
+        * Whether or not to use script tag injection for loading scripts.
+        * @type {boolean}
+        * * **/
+        mod.useTagInjection = mod.useTagInjection || false;
+        /** * *
+        * A string to hold our loaded scripts (for compiling).
+        * @type {string}
+        * * **/
+        mod.compilation = mod.compilation || '/// - mod.js compilation';
+        /** * *
+        * An object that maps basepath names to basepath urls.
+        * @type {Object.<string, string>}
+        * * **/
+        mod.expansions = mod.expansions || {};
+        //--------------------------------------
+        //  METHODS
+        //--------------------------------------
+        /** * *
+        * Resets mod.
+        * Resets all values of mod. Used when loading is done.
+        * @param {boolean} deleteModules Whether or not to reset (delete) the already loaded modules.
+        * * **/
+        mod.reset = function(deleteModules) {
+            deleteModules = deleteModules || false;
+        
+            for (var key in mod) {
+                if (key === 'modules' && !deleteModules) {
+                    continue;
+                }
+                if(typeof mod[key] === 'function') {
+                    continue;
+                }
+                delete mod[key];
+            }
+        };
+        /** * *
+        * Determines whether or not an object is a module.
+        * @param {Object} module
+        * @return {boolean}
+        * @nosideeffects
+        * * **/
+        var isModule = mod.isModule = function (module) {
+            if (!('name' in module) && (typeof module.name !== "string")) {
+                return false;
+            }
+            if (!('init' in module) && (typeof module.init !== "function")) {
+                return false;
+            }
+            if (('dependencies' in module) && (module.dependencies instanceof Array) !== true) {
+                return false;
+            }
+            return true;
+        };
+        /** * *
+        * Sorts the pkgs according to module priority.
+        * * **/
+        mod.sortPkgs = function () {
+            if (!('scripts' in mod)) {
+                return;
+            }
+            /** * *
+            * Resolves a dependency graph with root nodeName.
+            * @param {string} nodeName The name of the node to resolve.
+            * @param {Array=} resolved A list of resolved nodes (optional). 
+            * @param {Array=} unresolved A list of traversed nodes that have yet to be resolved (optional).
+            * @return {Array}  
+            * * **/
+            var resolve = function (nodeName, resolved, unresolved) {
+                resolved = resolved || [];
+                unresolved = unresolved || [];
+                // Get the node by nodeName...
+                var node = false;
+                for (var i=0; i < mod.pkgs.length; i++) {
+                    if (mod.pkgs[i].path == nodeName) {
+                        node = mod.pkgs[i];
+                        if (resolved.indexOf(node) !== -1) {
+                            // This node has already been resolved...
+                            return resolved;
+                        }
+                        if (unresolved.indexOf(node) !== -1) {
+                            // This node has not been resolved and yet
+                            // has already been traversed, meaning a circular
+                            // dependency...
+                            var circle = nodeName;
+                            for (i = unresolved.length - 1; i >= 0; i--){
+                                circle += ' <- '+unresolved[i].path;
+                                if (unresolved[i].path == nodeName) {
+                                    break;
+                                }
+                            }
+                            throw new Error('Detected a circular dependency with module defined in '+nodeName+'\n    '+circle);
+                        }
+                        unresolved.push(node);
+                    }
+                }
+            
+                if (node === false) {
+                    // This node is not a module, but another js script...
+                    return resolved;
+                }
+            
+                if (node.dependencies) {
+                    for (i=0; i < node.dependencies.length; i++) {
+                        resolve(node.dependencies[i], resolved, unresolved);
+                    }
+                }
+            
+                resolved.push(node);
+                unresolved.splice(unresolved.indexOf(node),1);
+            
+                return resolved;
+            };
+        
+            mod.pkgs = resolve('main');
+        };
+        /** * *
+        * Prints the order of initilization of modules to the console.
+        * Used for debugging.
+        * * **/
+        mod.printInitOrder = function () {
+            mod.sortPkgs();
+            for (var i=0; i < mod.pkgs.length; i++) {
+                console.log(i,mod.pkgs[i].name,mod.pkgs[i].path);
+            }
+        };
+        /** * *
+        * Compiles the loaded modules into one script for deployment.
+        * @return {string} A string of source code.
+        * * **/
+        mod.compile = function () {
+            mod.sortPkgs();
+            var output = '(function initModCompilation(){';
+            output += ('var modules = {};');
+            for (var i = 0; i < mod.pkgs.length; i++) {
+                if (isModule(mod.pkgs[i])) {
+                    var module = mod.pkgs[i];
+                    output += ('\n\n/// '+module.name);
+                    output += ('\nmodules.'+module.name+' = ('+module.init.toString()+')(modules);\n');
+                    if ('callback' in module) {
+                        output += ('('+module.callback.toString()+')(modules);\n');
+                    }
+                }
+            }
+            output += 'return modules;}())';
+            return output;
+        };
+        //--------------------------------------
+        //  PACKAGES
+        //--------------------------------------
+        /** * *
+        * Takes the arguments from mod and bundles them into a
+        * dependency object.
+        * @param {Object} module
+        * @return {Object}
+        * * **/
+        var constructPkg = function (module) {
+            if (!isModule(module)) {
+                throw new Error('mod() - module is malformed');
+            }
+        
+            module.path = mod.lastPathLoaded;
+            module.completed = false;
+            module.toString = function () {
+                return '[mod() Dependency Module pkg]';
+            };
+            return module;
+        };
+        /** * *
+        * Returns whether a pkg exists in the pkgs list.
+        * @param {Object} pkg
+        * @return {boolean}
+        * @nosideeffects
+        * * **/
+        var pkgExists = function (pkg) {
+            for (var i = 0; i < mod.pkgs.length; i++) {
+                var storedPkg = mod.pkgs[i];
+                if (storedPkg.name === pkg.name) {
+                    return true;
+                }
+            }    
+            return false;
+        };
+        /** * *
+        * Adds a dependency pkg to our pkgs list.
+        * @param {Object} pkg
+        * * **/
+        var addPkg = function (pkg) {
+            if (pkgExists(pkg)) {
+                // The pkg exists, the module is loading or has loaded,
+                // its callback has either been called or doesn't need to be...
+                return;
+            }
+        
+            // Add the pkg...
+            mod.pkgs.unshift(pkg);
+            for (var i = 0; pkg.dependencies && i < pkg.dependencies.length; i++) {
+                var dependency = pkg.dependencies[i];
+                var ndx = mod.scripts.indexOf(dependency);
+                if (ndx === -1) {
+                    // This dependency is unique, so add it...
+                    mod.scripts.push(dependency);
+                }
+            }
+        };
+    
+        var pkg = constructPkg(module);
+        addPkg(pkg);
 
-		testSeq.seq += '-t1_2';
-	    
-    	return {
-			name : 't1_2'
-		};
-	})(modules.testSeq);
-/// t1_3 from tests/t1_3.js
-    modules.t1_3 = (function initT1_3(testSeq, t1_2) {
-		console.warn('initializing t1_3');
+        /** * *
+        * Initializes a pkg and references it in the modules object.
+        * * **/
+        var initPkg = function(pkg) {
+            if (pkg.name in mod.modules) {
+                // this module has already been defined.
+                // this could have happened as a result of
+                // a module getting defined in the init() 
+                // or callback() of another
+                return;
+            }
+            pkg.completed = true;
+            try {
+                mod.modules[pkg.name] = pkg.init(mod.modules);
+            } catch (e) {
+                console.log(pkg);
+                throw new Error ('Error initializing '+pkg.path+'\n'+e);
+            }
+            if ('callback' in pkg) {
+                pkg.callback(mod.modules);
+            }
+        };
+        // A private placeholder function that executes
+        // after all loading and all initialization...
+        var _onload = function emptyFunction(){};
         
-        assert.eq(t1_2.name, 't1_2', 't1_2 is loaded.');
-		testSeq.seq += '-t1_3';
+        /** * *
+        * Initializes all pkgs.
+        * * **/
+        var initPkgs = function () {
+            mod.sortPkgs();
         
-		return {
-			name : 't1_3'
-		};
-	})(modules.testSeq,modules.t1_2);
-/// t1_1 from tests/t1_1.js
-    modules.t1_1 = (function initT1_1(testSeq, t1_3, t1_2) {
-		console.warn('initializing t1_1');
+            var n = mod.pkgs.length;
+            for (var i = 0; i < n; i++) {
+                initPkg(mod.pkgs[i]);
+            }
+            // At the end of all initialization perform the onload...
+            _onload(mod.modules);
+        };
+        //--------------------------------------
+        //  LOADING
+        //--------------------------------------
+        /** * *
+        * Loads a script from src, calls onload on load complete.
+        * @param {string} src
+        * @param {function()} onload
+        * * **/
+        var loadScript = function (src, onload) {
+            var nocache = (Math.random()*100000000).toString();
+            nocache = nocache.substr(0, nocache.indexOf('.'));
         
-		testSeq.seq += '-t1_1';
-		
+            // set the last path loaded
+            mod.lastPathLoaded = src;
+            mod.loadedScripts.unshift(src);
+        
+            var expandURL = function (src) {
+                var source = src;
+                var matches = src.match(/[^:]*::/g);
+                if (matches) {
+                    matches.map(function(match,ndx) {
+                        var key = match.substr(0,match.length-2);
+                        if (key in mod.expansions) {
+                            source = source.replace(match, mod.expansions[key]);
+                        }
+                    });
+                }
+                return source;
+            };
+            /** * *
+            * Uses script tag injection to download and exec a js file.
+            * @param {string} src
+            * @param {function()} onload 
+            * * **/
+            var loadWithTagInjection = function (src, onload) {
+                var script = document.createElement('script');
+                script.type = 'text/javascript';
+                script.id = 'mod_script_'+nocache;
+                script.onload = function() {
+                    mod.head.removeChild(script);
+                    onload();
+                };
+                mod.head.appendChild(script);
+                if (mod.nocache) {
+                    src += '?nocache='+nocache;
+                }
+                script.src = src;
+            };
+            /** * *
+            * Uses XMLHttpRequest to download and exec a js file.
+            * Also stores the response for compilation.
+            * @param {string} src
+            * @param {function()} onload 
+            * * **/
+            var loadWithXMLHttpRequest = function (src, onload) {
+                var request = new XMLHttpRequest();
+                var source = src;
+                request.open('GET', src, true);
+                request.onreadystatechange = function (e) {
+                    if (request.readyState === 4) {
+                        if (request.status === 200 || request.status === 0) {
+                            onload();
+                        } else {
+                            console.log('Error', request.statusText);
+                        }
+                    }
+                };
+                request.send(null);
+            };
+        
+            var url = expandURL(src);
+        
+            if (mod.useTagInjection) {
+                loadWithTagInjection(url, onload);
+            } else {
+                loadWithXMLHttpRequest(url, onload);
+            }
+        };
+        /** * *
+        * Retrieves the path of the next dependency.
+        * Returns null if no more dependencies exist.
+        * @return {?string}
+        * * **/
+        var getNextDependency = function () {
+            var msl = mod.scripts.length;
+            var mpl = mod.pkgs.length;
+            for (var i = 0; i < msl; i++) {
+                var script = mod.scripts[i];
+                if (mod.loadedScripts.indexOf(script) !== -1) {
+                    continue;
+                }
+                var loaded = false;
+                for (var j = 0; j < mpl; j++) {
+                    var loadedScript = mod.pkgs[j].path;
+                    if (script == loadedScript) {
+                        loaded = true;
+                        break;
+                    }
+                }
+                if (!loaded) {
+                    return script;
+                }
+            }
+            return null;
+        };
+        /** * *
+        * Loads the next dependency needed by our pkgs.
+        * * **/
+        var loadNextDependency = function() {
+            var nextDependency = getNextDependency();
+            if (nextDependency) {
+                mod.loading = true;
+                var onload = loadNextDependency;
+                var script = nextDependency;
+                loadScript(script, onload);
+            } else {
+                // there are no more unloaded dependencies,
+                // go through and call the callbacks in order
+                mod.loading = false;
+                initPkgs();
+            }
+        };
+    
+        if (!mod.loading) {
+            loadNextDependency();
+        }
+    
         return {
-			name : 't1_1'
-		};
-	})(modules.testSeq,modules.t1_3,modules.t1_2);
-/// t1 from tests/t1.js
-    modules.t1 = (function initT1(testSeq, t1_1) {
-		console.warn('initializing t1');
-		
-        assert.suite = "T1 tests";
-		testSeq.seq += '-t1';
-		assert.eq(testSeq.seq, '-t2_1-t2-t1_2-t1_3-t1_1-t1', 'modules init\'d in correct order');
-        
-		return {
-			name : 't1'
-		};
-	})(modules.testSeq,modules.t1_1);
-/// ExpansionTest from URLExpansion::ExpansionTest.js
-    modules.ExpansionTest = (function initE(m) {     
-        /** * *
-        * This is empty because to load this, is to pass.
-        * * **/
-        return 0xBEEF;
-    })();
-/// DoubleExpansion from URLExpansion::Deepest::DoubleExpansion.js
-    modules.DoubleExpansion = (function initE(m) {     
-        /** * *
-        * This is empty because to load this, is to pass.
-        * * **/
-        return 0xFACE;
-    })();
-/// main from main
-    modules.main = (function initMain(parallel, t1, expansionTest, double) {
-                        var modules = mod.modules;
-                        // Is module tests
-                        assert.eq(mod.isModule({
-                            name : 'ismod'
-                        }), false, 'Object with only name is not a module');
-                        assert.eq(mod.isModule({
-                            name : 'ismod',
-                            dependencies : []
-                        }), false, 'Object without init function is not a module');
-                        assert.eq(mod.isModule({
-                            name : 'ismod',
-                            init : function () {}
-                        }), true, 'Object with only name and init function is a module');
-                        // URL expansion tests...
-                        assert.eq(expansionTest, 0xBEEF, 'Can expand paths by key.');
-                        assert.eq(double, 0xFACE, 'Can expand paths by multiple keys.');
-                        // Standard JS test...
-                        assert.eq('go' in window, true, 'Can load external, non-module source files.');
-                        return {};
-                    })(modules.parallel,modules.t1,modules.ExpansionTest,modules.DoubleExpansion);
-    return modules;
-}(window));
+            onload : function(todo) {
+                _onload = todo;
+            }
+        };
+    };
+    window.mod = mod;
+})(window);
