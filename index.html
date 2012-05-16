@@ -2,31 +2,33 @@
     <head>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8">
         <title>mod</title>
-        <script src="mod.js" type="text/javascript" charset="utf-8"></script>
+        <script src="./mod.js" type="text/javascript" charset="utf-8"></script>
         <script src="tests/assert.js" type="text/javascript" charset="utf-8"></script>
     </head>
     <body id="index">
         <script type="text/javascript" charset="utf-8">
-            var initMod = function () {
-                if (mod.reset) {
-                    mod.reset();
-                }
-                mod.modules = {
-                    testSeq : ''
-                };
-                mod.useTagInjection = true;
-                mod.expansions = {
-                    URLExpansion : 'tests/outer/inner/',
-                    Deepest : 'deepest/'
-                };
-            };    
             var onload = function () {
+                var initMod = function () {
+                    if (mod.reset) {
+                        mod.reset();
+                    }
+                    mod.modules = {
+                        testSeq : ''
+                    };
+                    mod.useTagInjection = true;
+                    mod.expansions = {
+                        URLExpansion : 'tests/outer/inner/',
+                        Deepest : 'deepest/'
+                    };
+                };    
+                
                 initMod();
                 
                 // create the main module
                 mod({
                     name : 'main',
                     dependencies : [
+                        'tests/assert.js',
                         'tests/parallel.js',
                         'tests/t1.js',
                         'URLExpansion::ExpansionTest.js', // Test the url expansion feature...
