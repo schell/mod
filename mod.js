@@ -1,7 +1,8 @@
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * mod.js
 * A system for defining modules and loading external js sources.
-* 
+* https://github.com/schell/mod
+*
 * MIT LICENSE
 * Copyright (C) 2011 by Schell Scivally
 * 
@@ -99,6 +100,16 @@
         //--------------------------------------
         //  METHODS
         //--------------------------------------
+        /** * *
+        * Configures mod.
+        * Used mostly for AMD compliance.
+        * @param {Object}
+        * * **/
+        mod.configure = function modConfigure(config) {
+            config = config || {};
+            mod.useTagInjection = config.useTagInjection || false;
+            mod.expansions = config.expansions || {};
+        };
         /** * *
         * Resets mod.
         * Resets all values of mod. Used when loading is done.
@@ -523,7 +534,6 @@
             }
         };
     };
-    window.mod = mod;
     //--------------------------------------
     //  AMD COMPLIANCE
     //--------------------------------------
@@ -539,11 +549,17 @@
         factory = args.pop();
         dependencies = args.pop();
         id = args.pop();
+        
         mod({
             name : id,
             dependencies : dependencies,
             init : factory
         });
     }
+    //--------------------------------------
+    //  GLOBALS
+    //--------------------------------------
     window.define = window.define || define;
+    window.require = window.require || define;
+    window.mod = mod;
 })(window);
