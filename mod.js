@@ -559,7 +559,7 @@
     //--------------------------------------
     //  GLOBALS
     //--------------------------------------
-    window.define = window.define || define;
-    window.require = window.require || define;
+    //window.define = window.define || define;
+    //window.require = window.require || define;
     window.mod = mod;
 })(window);
