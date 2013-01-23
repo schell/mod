@@ -62,6 +62,9 @@ If you use `mod` to write lots of modules (when you're making a big project) `mo
 It essentially takes all your `init` functions and prints them to one monolithic file, which you can then compress with YUI or Google Closure. 
 To do this, load your project in your browser, open the js console and type `mod.printCompilation()`. Alternatively, to store in a string, type `var compilation = mod.compile();`.
 
+Examples
+--------
+For more examples check out my other project `bang` at https://github.com/schell/bang
 Notes
 -----
 In development situations the scripts `mod` loads can change often. In order to avoid the browser cacheing these files (and returning an old version of your scripts) set `mod.nocache = true`, which will enable the "force re-download" feature. Unfortunately with `mod.nocache` set to true, many javascript debuggers can't set breakpoints on the loaded scripts. Keep this in mind.
