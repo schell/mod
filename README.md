@@ -9,11 +9,8 @@ monolithic closure.
 Use
 ---
 `mod` uses initialization objects (called packages, internally) to define 
-modules. An initialization object takes a name, an init function and 
-optionally an array of dependencies. You can also supply an optional callback 
-to execute after the module has been initialized. Both the init() and 
-callback() are passed an object that contains all the initialized modules 
-thus far.
+modules. An initialization object takes a name, an array of dependencies 
+and an init function, which by my convention always returns a constructor. 
 
 Include mod.js in your `<head>`:
 	
@@ -21,48 +18,48 @@ Include mod.js in your `<head>`:
 <script src="mod.js" type="text/javascript" charset="utf-8"></script>
 ```
 
-and then set up your main module, which will be the entry point (or root) of your project:
+and then set up your a module:
 
 ```html
 <script type="text/javascript" charset="utf-8">
 ```
 ```javascript
-	var onload = function () {
-		// create the main module
+	// create a main module
 		mod({
-			name : 'Main',
+			name : 'SomeModule',
 			dependencies : [
-				'anotherModule.js'
+				'path/to/AnotherModule.js',
+				'path/to/YetAnotherModule.js'
 			],
-			init : function initMain(modules) {
-				// we can access anotherModule because mod.js
-				// initializes dependencies in order
-				var anotherModule = modules.anotherModule;
-				return {
-					someValue : anotherModule.someFunction(),
-					functionToExpose : anotherModule.someFunctionToExpose
+			init : function initMain(AnotherModule, YetAnotherModule) {
+				// We can access AnotherModule and YetAnotherModule because mod.js
+				// initializes dependencies in order and provides them to your init
+				// in the order that you declare them in the dependencies array above...
+				function SomeConstructor() {
+					this.foo = "bar";
+				}
+				SomeConstructor.prototype = {
+					anotherInstance : new AnotherModule(),
+					yetAnotherInstance : new YetAnotherInstance()
 				};
-			},
-			callback : function cbMain(modules) {
-				// we can access Main because callback() is not called
-				// until after Main's init()
-				var Main = modules.Main;
-				window.exposedFunction = Main.functionToExpose;
+				return SomeConstructor;
 			}
 		});
-	}
 ```
 ```html
 </script>
 ```
 
-In this first call `mod` packages your module initialization object and starts loading its dependencies (either through XMLHttpRequest or script tag injection). Once the dependencies are loaded (which may or may not define more modules and load more scripts), the result of the `init` function is stored in `mod.modules`, in this case as `mod.modules.Main`. The loaded modules are exposed to your `init` and `callback` functions as the only parameter, so they don't clutter global space.
+In this first call `mod` packages your module and starts loading its dependencies (either through XMLHttpRequest or script tag injection). 
+Once the dependencies are loaded, which probably define more modules and load more scripts, the result of the `init` function is stored in `mod.modules`, in this case as `mod.modules.SomeModule`, so they don't clutter global space. 
+The initialized modules are provided to other `init` functions in the order they are asked for.
 
 As an added benefit, you can share data between modules using `mod.modules`.
 
 Compiling
 ---------
-If you use `mod` to write lots of modules (like you're making a big project), `mod` can 'compile' your project for you, removing all instances of `mod`. It essentially takes all your `init` and `callback` functions and prints them to one monolithic file, which you can then compress with YUI or a google 'something-or-other'. 
+If you use `mod` to write lots of modules (when you're making a big project) `mod` can 'compile' your project for you, removing all instances of `mod`. 
+It essentially takes all your `init` functions and prints them to one monolithic file, which you can then compress with YUI or Google Closure. 
 To do this, load your project in your browser, open the js console and type `mod.printCompilation()`. Alternatively, to store in a string, type `var compilation = mod.compile();`.
 
 Notes
